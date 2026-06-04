@@ -4,52 +4,451 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI 챗봇</title>
+    <meta name="description" content="Gemini & Groq AI 모델과 대화하는 스마트 챗봇" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #fef6ff 30%, #fff5f0 60%, #f0f9ff 100%);
+        color: #1e293b;
+        display: flex;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      .app-wrapper {
+        width: 100%;
+        max-width: 680px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      /* Header */
+      .app-header {
+        text-align: center;
+        padding: 8px 0 0;
+      }
+
+      .app-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.02em;
+      }
+
+      .app-header p {
+        margin-top: 6px;
+        font-size: 0.875rem;
+        color: #94a3b8;
+        font-weight: 500;
+      }
+
+      /* Card */
+      .card {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.04),
+          0 10px 30px -5px rgba(0, 0, 0, 0.06);
+        padding: 28px;
+        transition: box-shadow 0.3s ease;
+      }
+
+      .card:hover {
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.06),
+          0 14px 40px -5px rgba(0, 0, 0, 0.09);
+      }
+
+      /* Form */
       #chatForm {
         display: flex;
         flex-direction: column;
+        gap: 16px;
+      }
+
+      .form-row {
+        display: flex;
         gap: 12px;
-        align-items: start;
+      }
+
+      .form-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .form-group label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      select,
+      input[type="text"],
+      input[name="ask"] {
+        width: 100%;
+        padding: 12px 16px;
+        font-family: "Inter", sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        outline: none;
+        transition: all 0.25s ease;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+
+      select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8.825a.5.5 0 0 1-.354-.146l-3.5-3.5a.5.5 0 1 1 .708-.708L6 7.617l3.146-3.146a.5.5 0 1 1 .708.708l-3.5 3.5a.5.5 0 0 1-.354.146z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+      }
+
+      select:focus,
+      input[name="ask"]:focus {
+        border-color: #a78bfa;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+      }
+
+      input[name="ask"] {
+        font-size: 1rem;
+      }
+
+      input[name="ask"]::placeholder {
+        color: #cbd5e1;
+      }
+
+      /* Button */
+      .btn-submit {
+        width: 100%;
+        padding: 14px;
+        font-family: "Inter", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.01em;
+      }
+
+      .btn-submit::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed, #9333ea);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .btn-submit:hover::before {
+        opacity: 1;
+      }
+
+      .btn-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.4);
+      }
+
+      .btn-submit:active {
+        transform: translateY(0);
+      }
+
+      .btn-submit span {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      /* Chat Container */
+      #chatContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .chat-bubble {
+        padding: 20px 24px;
+        border-radius: 16px;
+        animation: fadeSlideIn 0.4s ease;
+        line-height: 1.7;
+        font-size: 0.925rem;
+      }
+
+      .chat-bubble.question {
+        background: linear-gradient(135deg, #ede9fe, #e0e7ff);
+        border: 1px solid #c7d2fe;
+        border-bottom-left-radius: 4px;
+      }
+
+      .chat-bubble.answer {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-bottom-right-radius: 4px;
+      }
+
+      .chat-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+        padding: 3px 10px;
+        border-radius: 20px;
+      }
+
+      .chat-label.q {
+        background: #6366f1;
+        color: #fff;
+      }
+
+      .chat-label.a {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
+      .chat-text {
+        color: #334155;
+        word-break: break-word;
+      }
+
+      /* Loading Dots */
+      .loading-dots {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        padding: 12px 0 4px;
+      }
+
+      .loading-dots span {
+        width: 8px;
+        height: 8px;
+        background: #a78bfa;
+        border-radius: 50%;
+        animation: dotPulse 1.2s ease-in-out infinite;
+      }
+
+      .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes dotPulse {
+        0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+        40% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        color: #cbd5e1;
+      }
+
+      .empty-state .icon {
+        font-size: 3rem;
+        margin-bottom: 12px;
+      }
+
+      .empty-state p {
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      /* Responsive */
+      @media (max-width: 480px) {
+        body {
+          padding: 20px 12px;
+        }
+
+        .card {
+          padding: 20px;
+          border-radius: 16px;
+        }
+
+        .form-row {
+          flex-direction: column;
+        }
+
+        .app-header h1 {
+          font-size: 1.5rem;
+        }
       }
     </style>
   </head>
   <body>
-    <form id="chatForm">
-      <select name="provider">
-        <option>google</option>
-        <option>groq</option>
-      </select>
-      <select name="model">
-        <option>gemma-4-26b-a4b-it</option>
-        <option>openai/gpt-oss-120b</option>
-      </select>
-      <input name="ask" />
-      <button>물어보기</button>
-    </form>
-    <section id="chatContainer"></section>
+    <div class="app-wrapper">
+      <!-- Header -->
+      <header class="app-header">
+        <h1>✨ AI 챗봇</h1>
+        <p>Gemini & Groq 모델과 대화해보세요</p>
+      </header>
+
+      <!-- Input Card -->
+      <div class="card">
+        <form id="chatForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="provider">Provider</label>
+              <select name="provider" id="provider">
+                <option value="google">🔵 Google</option>
+                <option value="groq">🟣 Groq</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="model">Model</label>
+              <select name="model" id="model">
+                <option value="gemma-4-26b-a4b-it">Gemma 4 26B</option>
+                <option value="openai/gpt-oss-120b">GPT-OSS 120B</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="askInput">질문</label>
+            <input name="ask" id="askInput" placeholder="무엇이든 물어보세요..." />
+          </div>
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <span>💬 물어보기</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Chat Area -->
+      <section id="chatContainer">
+        <div class="empty-state" id="emptyState">
+          <div class="icon">💭</div>
+          <p>AI에게 질문을 입력해보세요!</p>
+        </div>
+      </section>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
       const chatForm = document.querySelector("#chatForm");
       const chatContainer = document.querySelector("#chatContainer");
+      const submitBtn = document.querySelector("#submitBtn");
+      const emptyState = document.querySelector("#emptyState");
+
       chatForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
-        console.log("formData", ...formData);
-        console.log("[클라이언트 요청 시작]");
-        const response = await axios.post(
-          "/chat",
-          Object.fromEntries(formData),
-        );
-        console.log("[클라이언트 요청 완료]");
-        // console.log("response", response.data);
-        const { result } = response.data;
-        const p = document.createElement("p");
-        p.innerHTML = `
-            <strong>질문</strong> : ${formData.get("ask")}<br>
-            <strong>대답</strong> : ${result}
+        const askText = formData.get("ask").trim();
+        if (!askText) return;
+
+        // Remove empty state
+        if (emptyState) emptyState.remove();
+
+        // Show question bubble
+        const questionBubble = document.createElement("div");
+        questionBubble.className = "chat-bubble question";
+        questionBubble.innerHTML = `
+          <div class="chat-label q">Q 질문</div>
+          <div class="chat-text">${escapeHTML(askText)}</div>
         `;
-        chatContainer.append(p);
+        chatContainer.append(questionBubble);
+
+        // Show loading
+        const loadingBubble = document.createElement("div");
+        loadingBubble.className = "chat-bubble answer";
+        loadingBubble.innerHTML = `
+          <div class="chat-label a">A 답변</div>
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        `;
+        chatContainer.append(loadingBubble);
+
+        // Disable button
+        submitBtn.disabled = true;
+        submitBtn.querySelector("span").textContent = "⏳ 생각 중...";
+
+        // Scroll to bottom
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+
+        try {
+          console.log("[클라이언트 요청 시작]");
+          const response = await axios.post(
+            "/chat",
+            Object.fromEntries(formData),
+          );
+          console.log("[클라이언트 요청 완료]");
+
+          const { result } = response.data;
+
+          // Replace loading with answer
+          loadingBubble.innerHTML = `
+            <div class="chat-label a">A 답변</div>
+            <div class="chat-text">${result}</div>
+          `;
+        } catch (err) {
+          loadingBubble.innerHTML = `
+            <div class="chat-label a">⚠️ 오류</div>
+            <div class="chat-text" style="color:#ef4444;">요청 중 오류가 발생했습니다. 다시 시도해주세요.</div>
+          `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.querySelector("span").textContent = "💬 물어보기";
+          event.target.querySelector("[name='ask']").value = "";
+          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        }
       });
+
+      function escapeHTML(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
     </script>
   </body>
 </html>
